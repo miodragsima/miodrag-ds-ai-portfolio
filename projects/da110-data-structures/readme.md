@@ -4,6 +4,7 @@ This repository contains simple implementations of fundamental data structures a
 
 ### Folder Structure
 
+```text
 da110-data-structures/
 ├── arrays/
 │   └── main.c
@@ -20,7 +21,7 @@ da110-data-structures/
 ├── searching/
 │   └── main.c
 └── README.md
-
+```
 ## Projects Included
 
 ### 1. Arrays Implementation
