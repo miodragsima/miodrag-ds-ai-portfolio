@@ -216,3 +216,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Generated EDA figures
+projects/titanic/eda/*.png
