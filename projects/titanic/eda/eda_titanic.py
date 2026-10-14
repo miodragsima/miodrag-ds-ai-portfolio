@@ -3,13 +3,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from pathlib import Path
+import os
 
 sns.set_style('whitegrid')
 plt.rcParams['figure.figsize'] = (12, 7)
 
 # --- Load data ---
-url = 'https://raw.githubusercontent.com/datasciencehandbook/notebooks/data/titanic.csv'
-df = pd.read_csv(url)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(current_dir, 'titanic.csv')
+
+if not os.path.exists(csv_path):
+    print(f"Error: CSV file not found at {csv_path}")
+    exit(1)
+
+df = pd.read_csv(csv_path)
 print(f"Dataset: {len(df)} rows, {len(df.columns)} columns")
 print(df.head())
 
@@ -21,15 +28,27 @@ print()
 # --- 1. Survival by Pclass & Sex ---
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-survival_pc = df.groupby('Pclass')['Survived'].mean()
-survival_pc.plot(kind='bar', ax=axes[0], color=['#e74c3c','#3498db','#2ecc71'])
-axes[0].set_title('Survival Rate by Passenger Class')
-axes[0].set_ylabel("Survival Rate")
-
-sex_surv = df.groupby('Sex')['Survived'].mean()
-sex_surv.plot(kind='bar', ax=axes[1], color=['#e67e22','#9b59b6'])
-axes[1].set_title("Survival Rate by Gender")
-axes[1].set_ylabel("Survival Rate")
+# Anpassung für neue Spaltennamen
+if 'pclass' in df.columns:
+    survival_pc = df.groupby('pclass')['survived'].mean()
+    survival_pc.plot(kind='bar', ax=axes[0], color=['#e74c3c','#3498db','#2ecc71'])
+    axes[0].set_title('Survival Rate by Passenger Class')
+    axes[0].set_ylabel("Survival Rate")
+    
+    sex_surv = df.groupby('sex')['survived'].mean()
+    sex_surv.plot(kind='bar', ax=axes[1], color=['#e67e22','#9b59b6'])
+    axes[1].set_title("Survival Rate by Gender")
+    axes[1].set_ylabel("Survival Rate")
+elif 'class' in df.columns:
+    survival_pc = df.groupby('class')['survived'].mean()
+    survival_pc.plot(kind='bar', ax=axes[0], color=['#e74c3c','#3498db','#2ecc71'])
+    axes[0].set_title('Survival Rate by Passenger Class')
+    axes[0].set_ylabel("Survival Rate")
+    
+    sex_surv = df.groupby('sex')['survived'].mean()
+    sex_surv.plot(kind='bar', ax=axes[1], color=['#e67e22','#9b59b6'])
+    axes[1].set_title("Survival Rate by Gender")
+    axes[1].set_ylabel("Survival Rate")
 
 plt.tight_layout()
 plt.savefig(os.path.join(os.path.dirname(__file__), 'fig1_survival_by_class_gender.png'), dpi=150)
@@ -39,16 +58,17 @@ print("\nFig 1 saved: fig1_survival_by_class_gender.png")
 # --- 2. Age distribution ---
 fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-df[df["Survived"]==1]["Age"].dropna().hist(bins=30, alpha=0.7, label="Survived", ax=axes[0], color="#2ecc71")
-df[df["Survived"]==0]["Age"].dropna().hist(bins=30, alpha=0.7, label="Died", ax=axes[0], color="#e74c3c")
-axes[0].set_title("Age Distribution - Survived vs Died")
-axes[0].legend()
+if 'survived' in df.columns and 'age' in df.columns:
+    df[df["survived"]==1]["age"].dropna().hist(bins=30, alpha=0.7, label="Survived", ax=axes[0], color="#2ecc71")
+    df[df["survived"]==0]["age"].dropna().hist(bins=30, alpha=0.7, label="Died", ax=axes[0], color="#e74c3c")
+    axes[0].set_title("Age Distribution - Survived vs Died")
+    axes[0].legend()
 
-for survived in [0, 1]:
-    sub = df[df["Survived"]==survived]["Age"].dropna()
-    rate = (sub < 18).sum() / len(sub) if len(sub) > 0 else 0
-    label = "Survived" if survived == 1 else "Died"
-    print(f"  {label} - under-18 rate: {rate:.1%}")
+    for survived in [0, 1]:
+        sub = df[df["survived"]==survived]["age"].dropna()
+        rate = (sub < 18).sum() / len(sub) if len(sub) > 0 else 0
+        label = "Survived" if survived == 1 else "Died"
+        print(f"  {label} - under-18 rate: {rate:.1%}")
 
 plt.tight_layout()
 plt.savefig(os.path.join(os.path.dirname(__file__), 'fig2_age_distribution.png'), dpi=150)
@@ -56,19 +76,20 @@ plt.show()
 print("\nFig 2 saved: fig2_age_distribution.png")
 
 # --- 3. Fare by Pclass + Survival ---
-fig, ax = plt.subplots(figsize=(9, 5))
-for surv in [0, 1]:
-    data = df[df["Survived"]==surv].groupby("Pclass")["Fare"].mean()
-    label = "Died" if surv == 0 else "Survived"
-    data.plot(kind='bar', ax=ax, label=label)
-ax.set_title('Average Fare by Passenger Class & Survival')
-ax.set_ylabel("Avg Fare ($)")
-ax.legend()
+if 'fare' in df.columns and 'pclass' in df.columns:
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for surv in [0, 1]:
+        data = df[df["survived"]==surv].groupby("pclass")["fare"].mean()
+        label = "Died" if surv == 0 else "Survived"
+        data.plot(kind='bar', ax=ax, label=label)
+    ax.set_title('Average Fare by Passenger Class & Survival')
+    ax.set_ylabel("Avg Fare ($)")
+    ax.legend()
 
-plt.tight_layout()
-plt.savefig(os.path.join(os.path.dirname(__file__), 'fig3_fare_by_class.png'), dpi=150)
-plt.show()
-print("\nFig 3 saved: fig3_fare_by_class.png")
+    plt.tight_layout()
+    plt.savefig(os.path.join(os.path.dirname(__file__), 'fig3_fare_by_class.png'), dpi=150)
+    plt.show()
+    print("\nFig 3 saved: fig3_fare_by_class.png")
 
 # --- 4. Heatmap of missing data ---
 fig, ax = plt.subplots(figsize=(8, 5))
@@ -83,15 +104,16 @@ print("\nFig 4 saved: fig4_missing_data.png")
 
 # --- 5. Correlation matrix ---
 numeric_cols = df.select_dtypes(include=['float64', 'int64'])
-corr = numeric_cols.corr()
-fig, ax = plt.subplots(figsize=(7, 5))
-sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, ax=ax)
-ax.set_title('Correlation Matrix - Numeric Features')
+if len(numeric_cols.columns) > 1:
+    corr = numeric_cols.corr()
+    fig, ax = plt.subplots(figsize=(7, 5))
+    sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, ax=ax)
+    ax.set_title('Correlation Matrix - Numeric Features')
 
-plt.tight_layout()
-plt.savefig(os.path.join(os.path.dirname(__file__), 'fig5_correlation.png'), dpi=150)
-plt.show()
-print("\nFig 5 saved: fig5_correlation.png")
+    plt.tight_layout()
+    plt.savefig(os.path.join(os.path.dirname(__file__), 'fig5_correlation.png'), dpi=150)
+    plt.show()
+    print("\nFig 5 saved: fig5_correlation.png")
 
 # --- Key Findings Summary ---
 print('\n========== KEY FINDINGS ==========\n')
